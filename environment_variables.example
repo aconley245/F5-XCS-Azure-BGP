@@ -1,0 +1,11 @@
+# Azure Credentials
+export ARM_USE_MSI=true
+export ARM_SUBSCRIPTION_ID=159f2485-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+export ARM_TENANT_ID=72f988bf-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+export ARM_CLIENT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx # only necessary for user assigned identity
+export ARM_MSI_ENDPOINT=$MSI_ENDPOINT # only necessary when the msi endpoint is different than the well-known one
+
+# XCS Credentials
+export VOLT_API_CERT="/path/to/api_credential.p12"
+export VES_P12_PASSWORD="api_credential.p12_password"
+export VOLT_API_URL="https://<tenant_name>.console.ves.volterra.io/api"
