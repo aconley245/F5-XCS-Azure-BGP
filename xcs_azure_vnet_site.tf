@@ -50,9 +50,10 @@ resource "volterra_azure_vnet_site" "f5example" {
     // One of the arguments from this list "hub not_hub" must be set
 
     not_hub = true
+    
     #hub {
       // One of the arguments from this list "express_route_enabled express_route_disabled" must be set
-     # express_route_disabled = true
+     #express_route_disabled = true
 
       #spoke_vnets {
        # labels = {
