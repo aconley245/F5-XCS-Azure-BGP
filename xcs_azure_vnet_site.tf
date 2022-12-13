@@ -14,7 +14,7 @@ variable "xcs_tenant" {
 resource "volterra_azure_vnet_site" "f5example" {
   name      = var.xcs_azure_site_name
   namespace = "system"
-
+  
   // One of the arguments from this list "default_blocked_services blocked_services" must be set
   default_blocked_services = true
 
@@ -31,9 +31,11 @@ resource "volterra_azure_vnet_site" "f5example" {
   azure_region   = "eastus"
   resource_group = "aconley-xcs-rg"
 
+  disk_size = 80
+  machine_type = "Standard_D3_v2"
   // One of the arguments from this list "voltstack_cluster_ar ingress_gw ingress_egress_gw voltstack_cluster ingress_gw_ar ingress_egress_gw_ar" must be set
 
-  ingress_egress_gw_ar {
+  ingress_egress_gw {
     azure_certified_hw = "azure-byol-multi-nic-voltmesh"
 
     // One of the arguments from this list "no_dc_cluster_group dc_cluster_group_outside_vn dc_cluster_group_inside_vn" must be set
@@ -47,24 +49,25 @@ resource "volterra_azure_vnet_site" "f5example" {
 
     // One of the arguments from this list "hub not_hub" must be set
 
-    hub {
+    not_hub = true
+    #hub {
       // One of the arguments from this list "express_route_enabled express_route_disabled" must be set
-      express_route_disabled = true
+     # express_route_disabled = true
 
-      spoke_vnets {
-        labels = {
-          "key1" = "value1"
-        }
+      #spoke_vnets {
+       # labels = {
+       #   "key1" = "value1"
+       # }
 
         // One of the arguments from this list "auto manual" must be set
-        auto = true
+        #auto = true
 
-        vnet {
-          resource_group = var.azure_resource_group
-          vnet_name      = var.azure_vnet_name
-        }
-      }
-    }
+        #vnet {
+        #  resource_group = var.azure_resource_group
+        #  vnet_name      = var.azure_vnet_name
+        #}
+      #}
+    #}
     // One of the arguments from this list "no_inside_static_routes inside_static_routes" must be set
     inside_static_routes {
       static_route_list {
@@ -95,9 +98,9 @@ resource "volterra_azure_vnet_site" "f5example" {
     }
     // One of the arguments from this list "active_network_policies active_enhanced_firewall_policies no_network_policy" must be set
     no_network_policy = true
-    node {
-      fault_domain = "1"
-
+    az_nodes {
+      #fault_domain = "1"
+      azure_az = "1"
       inside_subnet {
         // One of the arguments from this list "subnet_param subnet" must be set
 
@@ -107,7 +110,7 @@ resource "volterra_azure_vnet_site" "f5example" {
         }
       }
 
-      node_number = "1"
+      # node_number = "1"
 
       outside_subnet {
         // One of the arguments from this list "subnet_param subnet" must be set
@@ -118,7 +121,7 @@ resource "volterra_azure_vnet_site" "f5example" {
         }
       }
 
-      update_domain = "1"
+      #update_domain = "1"
     }
     // One of the arguments from this list "no_outside_static_routes outside_static_routes" must be set
     no_outside_static_routes = true
@@ -137,5 +140,13 @@ resource "volterra_azure_vnet_site" "f5example" {
     }
   }
   // One of the arguments from this list "total_nodes no_worker_nodes nodes_per_az" must be set
-  total_nodes = "1"
+  no_worker_nodes = true
+}
+
+resource "volterra_tf_params_action" "apply_azure_vnet" {
+  site_name        = volterra_azure_vnet_site.f5example.name
+  site_kind        = "azure_vnet_site"
+  action           = "apply"
+  wait_for_action  = true
+  ignore_on_update = true
 }
