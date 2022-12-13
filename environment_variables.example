@@ -1,9 +1,8 @@
 # Azure Credentials
-export ARM_USE_MSI=true
-export ARM_SUBSCRIPTION_ID=159f2485-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-export ARM_TENANT_ID=72f988bf-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-export ARM_CLIENT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx # only necessary for user assigned identity
-export ARM_MSI_ENDPOINT=$MSI_ENDPOINT # only necessary when the msi endpoint is different than the well-known one
+export ARM_SUBSCRIPTION_ID="<Azure subscription ID>"
+export ARM_TENANT_ID="<Azure tenant ID>"
+export ARM_CLIENT_ID="<Azure client ID>" 
+export ARM_CLIENT_SECRET="<Azure client passwor>"
 
 # XCS Credentials
 export VOLT_API_CERT="/path/to/api_credential.p12"
