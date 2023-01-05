@@ -10,86 +10,60 @@ variable "xcs_tenant" {
   type        = string
   description = "XCS Tenant Name"
 }
-
+variable "xcs_azure_rsg" {
+  type        = string
+  description = "Azure Resource Group to deploy CE into, must be a new RSG"
+}
 resource "volterra_azure_vnet_site" "f5example" {
   name      = var.xcs_azure_site_name
   namespace = "system"
-  
-  // One of the arguments from this list "default_blocked_services blocked_services" must be set
-  default_blocked_services = true
 
-  // One of the arguments from this list "azure_cred" must be set
+  default_blocked_services = true
 
   azure_cred {
     name      = var.xcs_azure_cred_name
     namespace = "system"
     tenant    = var.xcs_tenant
   }
-  // One of the arguments from this list "logs_streaming_disabled log_receiver" must be set
-  logs_streaming_disabled = true
-  // One of the arguments from this list "azure_region alternate_region" must be set
-  azure_region   = "eastus"
-  resource_group = "aconley-xcs-rg"
 
-  disk_size = 80
+  logs_streaming_disabled = true
+
+  azure_region   = azurerm_resource_group.f5example.location
+  resource_group = var.xcs_azure_rsg
+
+  disk_size    = 80
   machine_type = "Standard_D3_v2"
-  // One of the arguments from this list "voltstack_cluster_ar ingress_gw ingress_egress_gw voltstack_cluster ingress_gw_ar ingress_egress_gw_ar" must be set
 
   ingress_egress_gw {
-    azure_certified_hw = "azure-byol-multi-nic-voltmesh"
+    azure_certified_hw      = "azure-byol-multi-nic-voltmesh"
+    no_dc_cluster_group     = true
+    no_forward_proxy        = true
+    no_global_network       = true
+    sm_connection_public_ip = true
+    not_hub                 = true
+    no_network_policy       = true
 
-    // One of the arguments from this list "no_dc_cluster_group dc_cluster_group_outside_vn dc_cluster_group_inside_vn" must be set
-    no_dc_cluster_group = true
-
-    // One of the arguments from this list "no_forward_proxy active_forward_proxy_policies forward_proxy_allow_all" must be set
-    no_forward_proxy = true
-
-    // One of the arguments from this list "no_global_network global_network_list" must be set
-    no_global_network = true
-
-    // One of the arguments from this list "hub not_hub" must be set
-
-    not_hub = true
-    
-    #hub {
-      // One of the arguments from this list "express_route_enabled express_route_disabled" must be set
-     #express_route_disabled = true
-
-      #spoke_vnets {
-       # labels = {
-       #   "key1" = "value1"
-       # }
-
-        // One of the arguments from this list "auto manual" must be set
-        #auto = true
-
-        #vnet {
-        #  resource_group = var.azure_resource_group
-        #  vnet_name      = var.azure_vnet_name
-        #}
-      #}
-    #}
-    // One of the arguments from this list "no_inside_static_routes inside_static_routes" must be set
     inside_static_routes {
       static_route_list {
         custom_static_route {
           subnets {
             ipv4 {
-              prefix = "10.100.0.0"
-              plen   = "24"
+              prefix = split("/", azurerm_subnet.routeserver.address_prefixes[0])[0]
+              plen   = split("/", azurerm_subnet.routeserver.address_prefixes[0])[1]
             }
           }
           nexthop {
             type = "NEXT_HOP_USE_CONFIGURED"
             nexthop_address {
               ipv4 {
-                addr = "10.100.1.1"
+                // Sets the next hop to the first IP on the CE inside subnet
+                addr = cidrhost(azurerm_subnet.ceinside.address_prefixes[0], 1)
               }
             }
             interface {
-              tenant    = "f5-amer-ent-qyyfhhfj"
+              tenant    = var.xcs_tenant
               namespace = "system"
-              name      = "aconley-azure-inside"
+              name      = volterra_network_interface.sli.name
             }
           }
           labels = {}
@@ -97,53 +71,37 @@ resource "volterra_azure_vnet_site" "f5example" {
         }
       }
     }
-    // One of the arguments from this list "active_network_policies active_enhanced_firewall_policies no_network_policy" must be set
-    no_network_policy = true
+
     az_nodes {
-      #fault_domain = "1"
       azure_az = "1"
       inside_subnet {
-        // One of the arguments from this list "subnet_param subnet" must be set
-
         subnet {
-          subnet_name = "CEInsideSubnet"
-          subnet_resource_grp = "aconley-transit-rg"
+          subnet_name         = azurerm_subnet.ceinside.name
+          subnet_resource_grp = azurerm_resource_group.f5example.name
         }
       }
-
-      # node_number = "1"
-
       outside_subnet {
-        // One of the arguments from this list "subnet_param subnet" must be set
-
         subnet {
-          subnet_name = "CEOutsideSubnet"
-          subnet_resource_grp = "aconley-transit-rg"
+          subnet_name         = azurerm_subnet.ceoutside.name
+          subnet_resource_grp = azurerm_resource_group.f5example.name
         }
       }
-
-      #update_domain = "1"
     }
-    // One of the arguments from this list "no_outside_static_routes outside_static_routes" must be set
+
     no_outside_static_routes = true
-    // One of the arguments from this list "sm_connection_public_ip sm_connection_pvt_ip" must be set
-    sm_connection_public_ip = true
   }
-  vnet {
-    // One of the arguments from this list "new_vnet existing_vnet" must be set
 
+  vnet {
     existing_vnet {
-      // One of the arguments from this list "name autogenerate" must be set
-      vnet_name = var.azure_vnet_name
-      #primary_ipv4 = var.azure_vnet_address_space
-      resource_group = var.azure_resource_group
+      vnet_name      = azurerm_virtual_network.f5example.name
+      resource_group = azurerm_resource_group.f5example.name
 
     }
   }
-  // One of the arguments from this list "total_nodes no_worker_nodes nodes_per_az" must be set
   no_worker_nodes = true
 }
 
+// Apply the Azure VNet Site
 resource "volterra_tf_params_action" "apply_azure_vnet" {
   site_name        = volterra_azure_vnet_site.f5example.name
   site_kind        = "azure_vnet_site"
